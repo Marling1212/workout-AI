@@ -32,13 +32,15 @@ function speak(text: string) {
 }
 const DEFAULT_REST_SECONDS = 30;
 
+const MIN_REST_SECONDS = 5;
+
 function parseTimeToSeconds(str: string): number {
   if (!str || typeof str !== "string") return DEFAULT_REST_SECONDS;
   const s = str.trim().toLowerCase();
   const num = parseInt(s.replace(/\D/g, ""), 10);
-  if (isNaN(num)) return DEFAULT_REST_SECONDS;
-  if (s.includes("min")) return num * 60;
-  return num;
+  if (isNaN(num) || num <= 0) return DEFAULT_REST_SECONDS;
+  const sec = s.includes("min") ? num * 60 : num;
+  return Math.max(MIN_REST_SECONDS, sec);
 }
 
 interface WorkoutInterval {
@@ -70,7 +72,7 @@ function buildIntervals(
       : DEFAULT_WORK_SECONDS;
 
   for (const ex of mainWorkout) {
-    const restSec = parseTimeToSeconds(ex.rest_time);
+    const restSec = Math.max(MIN_REST_SECONDS, parseTimeToSeconds(ex.rest_time));
     for (let s = 0; s < ex.sets; s++) {
       intervals.push({
         type: "work",
@@ -129,13 +131,16 @@ function WorkoutPlayer({
   useEffect(() => {
     if (secondsLeft === 0 && current && index < intervals.length) {
       if (index < intervals.length - 1) {
-        setIndex((i) => i + 1);
+        const nextIndex = index + 1;
+        const nextInterval = intervals[nextIndex];
+        setIndex(nextIndex);
+        setSecondsLeft(nextInterval?.durationSeconds ?? MIN_REST_SECONDS);
         announcedReadyRef.current = false;
       } else {
         setIsPlaying(false);
       }
     }
-  }, [secondsLeft, current, index, intervals.length]);
+  }, [secondsLeft, current, index, intervals]);
 
   useEffect(() => {
     if (current?.type === "rest" && next?.type === "work" && secondsLeft === 5 && !muted && !announcedReadyRef.current) {
@@ -153,7 +158,10 @@ function WorkoutPlayer({
   const handleSkip = () => {
     if (index < intervals.length - 1) {
       announcedReadyRef.current = false;
-      setIndex((i) => i + 1);
+      const nextIndex = index + 1;
+      const nextInterval = intervals[nextIndex];
+      setIndex(nextIndex);
+      setSecondsLeft(nextInterval?.durationSeconds ?? MIN_REST_SECONDS);
     } else {
       onClose();
     }
@@ -165,11 +173,11 @@ function WorkoutPlayer({
 
   return (
     <div
-      className={`fixed inset-0 z-50 flex flex-col items-center justify-center transition-colors duration-500 ${
+      className={`fixed inset-0 z-50 flex flex-col items-center justify-center transition-colors duration-500 h-[100dvh] max-h-[100dvh] overflow-hidden ${
         isWork ? "bg-emerald-600" : "bg-red-600"
       }`}
     >
-      <div className="absolute top-4 right-4 flex gap-2">
+      <div className="absolute top-2 right-2 sm:top-4 sm:right-4 flex gap-2 z-10">
         <button
           type="button"
           onClick={() => setMuted((m) => !m)}
@@ -202,48 +210,48 @@ function WorkoutPlayer({
         </button>
       </div>
 
-      <div className="flex flex-col items-center justify-center flex-1 w-full max-w-lg px-6">
-        <p className="text-white/90 text-lg font-medium uppercase tracking-wider mb-2">
+      <div className="flex flex-col items-center justify-center flex-1 min-h-0 w-full max-w-lg px-4 py-2 sm:px-6">
+        <p className="text-white/90 text-sm sm:text-lg font-medium uppercase tracking-wider mb-1 sm:mb-2 shrink-0">
           {current?.type === "work" ? "Work" : "Rest"}
         </p>
-        <p className="text-white text-2xl sm:text-3xl font-display font-bold text-center mb-8 min-h-[2.5rem]">
+        <p className="text-white text-lg sm:text-2xl md:text-3xl font-display font-bold text-center mb-2 sm:mb-4 min-h-[1.5rem] sm:min-h-[2.5rem] line-clamp-2">
           {current?.exercise}
           {current && (
-            <span className="block text-white/80 text-lg font-normal mt-1">
+            <span className="block text-white/80 text-sm sm:text-lg font-normal mt-0.5 sm:mt-1">
               Set {current.setIndex} of {current.totalSets}
             </span>
           )}
         </p>
 
-        <div className="text-[min(35vw,180px)] sm:text-[180px] font-display font-black text-white tabular-nums leading-none mb-4">
+        <div className="text-[min(28vw,140px)] sm:text-[160px] md:text-[180px] font-display font-black text-white tabular-nums leading-none my-1 sm:my-2 shrink-0">
           {secondsLeft}
         </div>
 
         {next && (
-          <p className="text-white/70 text-base sm:text-lg mb-8">
+          <p className="text-white/70 text-xs sm:text-base md:text-lg mb-2 sm:mb-4 line-clamp-2 shrink-0">
             Next: {next.exercise} ({next.type})
           </p>
         )}
 
-        <div className="flex gap-4">
+        <div className="flex gap-2 sm:gap-4 shrink-0">
           <button
             type="button"
             onClick={() => setIsPlaying((p) => !p)}
-            className="px-8 py-4 rounded-2xl bg-white text-surface-900 font-display font-bold text-lg shadow-lg touch-manipulation active:scale-95"
+            className="px-5 py-3 sm:px-8 sm:py-4 rounded-xl sm:rounded-2xl bg-white text-surface-900 font-display font-bold text-base sm:text-lg shadow-lg touch-manipulation active:scale-95"
           >
             {isPlaying ? "Pause" : "Play"}
           </button>
           <button
             type="button"
             onClick={handleSkip}
-            className="px-8 py-4 rounded-2xl bg-white/20 hover:bg-white/30 text-white font-display font-bold text-lg touch-manipulation active:scale-95"
+            className="px-5 py-3 sm:px-8 sm:py-4 rounded-xl sm:rounded-2xl bg-white/20 hover:bg-white/30 text-white font-display font-bold text-base sm:text-lg touch-manipulation active:scale-95"
           >
             Skip
           </button>
         </div>
       </div>
 
-      <div className="pb-8 flex gap-1 overflow-x-auto px-4 max-w-full">
+      <div className="pb-2 sm:pb-4 flex gap-1 overflow-x-auto px-4 max-w-full shrink-0 min-h-[12px]">
         {intervals.map((_, i) => (
           <div
             key={i}
