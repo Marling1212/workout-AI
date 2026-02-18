@@ -482,8 +482,8 @@ function WorkoutDisplay({
                       {ex.sets} sets
                     </span>
                     {ex.reps?.trim() && (
-                      <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-surface-200 dark:bg-surface-700 text-surface-800 dark:text-surface-200 font-bold text-sm">
-                        {ex.reps} reps
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-slate-300 dark:bg-slate-600 text-slate-900 dark:text-white font-bold text-sm">
+                        {ex.reps.trim()} reps
                       </span>
                     )}
                     {ex.rest_time && (
