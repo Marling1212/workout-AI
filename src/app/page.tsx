@@ -32,15 +32,12 @@ function speak(text: string) {
 }
 const DEFAULT_REST_SECONDS = 30;
 
-const MIN_REST_SECONDS = 5;
-
 function parseTimeToSeconds(str: string): number {
   if (!str || typeof str !== "string") return DEFAULT_REST_SECONDS;
   const s = str.trim().toLowerCase();
   const num = parseInt(s.replace(/\D/g, ""), 10);
-  if (isNaN(num) || num <= 0) return DEFAULT_REST_SECONDS;
-  const sec = s.includes("min") ? num * 60 : num;
-  return Math.max(MIN_REST_SECONDS, sec);
+  if (isNaN(num) || num < 0) return DEFAULT_REST_SECONDS;
+  return s.includes("min") ? num * 60 : num;
 }
 
 interface WorkoutInterval {
@@ -72,7 +69,7 @@ function buildIntervals(
       : DEFAULT_WORK_SECONDS;
 
   for (const ex of mainWorkout) {
-    const restSec = Math.max(MIN_REST_SECONDS, parseTimeToSeconds(ex.rest_time));
+    const restSec = parseTimeToSeconds(ex.rest_time);
     for (let s = 0; s < ex.sets; s++) {
       intervals.push({
         type: "work",
@@ -134,7 +131,7 @@ function WorkoutPlayer({
         const nextIndex = index + 1;
         const nextInterval = intervals[nextIndex];
         setIndex(nextIndex);
-        setSecondsLeft(nextInterval?.durationSeconds ?? MIN_REST_SECONDS);
+        setSecondsLeft(nextInterval?.durationSeconds ?? DEFAULT_REST_SECONDS);
         announcedReadyRef.current = false;
       } else {
         setIsPlaying(false);
@@ -161,7 +158,7 @@ function WorkoutPlayer({
       const nextIndex = index + 1;
       const nextInterval = intervals[nextIndex];
       setIndex(nextIndex);
-      setSecondsLeft(nextInterval?.durationSeconds ?? MIN_REST_SECONDS);
+      setSecondsLeft(nextInterval?.durationSeconds ?? DEFAULT_REST_SECONDS);
     } else {
       onClose();
     }
