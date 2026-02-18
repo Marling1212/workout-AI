@@ -481,9 +481,11 @@ function WorkoutDisplay({
                     <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 font-bold text-sm">
                       {ex.sets} sets
                     </span>
-                    <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-surface-200 dark:bg-surface-700 text-surface-800 dark:text-surface-200 font-bold text-sm">
-                      {ex.reps?.trim() ? `${ex.reps} reps` : "Reps: as needed"}
-                    </span>
+                    {ex.reps?.trim() && (
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-surface-200 dark:bg-surface-700 text-surface-800 dark:text-surface-200 font-bold text-sm">
+                        {ex.reps} reps
+                      </span>
+                    )}
                     {ex.rest_time && (
                       <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200 font-bold text-sm">
                         Rest: {ex.rest_time}
