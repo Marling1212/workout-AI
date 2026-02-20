@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const DEFAULT_WORK_SECONDS = 30;
 
@@ -34,10 +35,12 @@ const DEFAULT_REST_SECONDS = 30;
 
 function parseTimeToSeconds(str: string): number {
   if (!str || typeof str !== "string") return DEFAULT_REST_SECONDS;
-  const s = str.trim().toLowerCase();
+  const s = str.trim();
   const num = parseInt(s.replace(/\D/g, ""), 10);
   if (isNaN(num) || num < 0) return DEFAULT_REST_SECONDS;
-  return s.includes("min") ? num * 60 : num;
+  const lower = s.toLowerCase();
+  const isMinutes = lower.includes("min") || /分|分鐘|分钟/.test(s);
+  return isMinutes ? num * 60 : num;
 }
 
 interface WorkoutInterval {
@@ -94,10 +97,14 @@ function WorkoutPlayer({
   mainWorkout,
   targetMinutes,
   onClose,
+  t,
+  lang,
 }: {
   mainWorkout: WorkoutExercise[];
   targetMinutes?: number;
   onClose: () => void;
+  t: (key: import("@/lib/translations").TranslationKey, params?: Record<string, string | number>) => string;
+  lang: "en" | "zh";
 }) {
   const intervals = buildIntervals(mainWorkout, targetMinutes);
   const [index, setIndex] = useState(0);
@@ -142,9 +149,9 @@ function WorkoutPlayer({
   useEffect(() => {
     if (current?.type === "rest" && next?.type === "work" && secondsLeft === 5 && !muted && !announcedReadyRef.current) {
       announcedReadyRef.current = true;
-      speak(`Get ready for ${next.exercise}`);
+      speak(`${t("playerGetReady")} ${next.exercise}`);
     }
-  }, [current?.type, next?.type, next?.exercise, secondsLeft, muted]);
+  }, [current?.type, next?.type, next?.exercise, secondsLeft, muted, t]);
 
   useEffect(() => {
     if (secondsLeft >= 1 && secondsLeft <= 3 && isPlaying && !muted) {
@@ -209,13 +216,13 @@ function WorkoutPlayer({
 
       <div className="flex flex-col items-center justify-center flex-1 min-h-0 w-full max-w-lg px-4 py-2 sm:px-6">
         <p className="text-white/90 text-sm sm:text-lg font-medium uppercase tracking-wider mb-1 sm:mb-2 shrink-0">
-          {current?.type === "work" ? "Work" : "Rest"}
+          {current?.type === "work" ? t("playerWork") : t("playerRest")}
         </p>
         <p className="text-white text-lg sm:text-2xl md:text-3xl font-display font-bold text-center mb-2 sm:mb-4 min-h-[1.5rem] sm:min-h-[2.5rem] line-clamp-2">
           {current?.exercise}
           {current && (
             <span className="block text-white/80 text-sm sm:text-lg font-normal mt-0.5 sm:mt-1">
-              Set {current.setIndex} of {current.totalSets}
+              {t("setOf", { n: current.setIndex, total: current.totalSets })}
             </span>
           )}
         </p>
@@ -226,7 +233,7 @@ function WorkoutPlayer({
 
         {next && (
           <p className="text-white/70 text-xs sm:text-base md:text-lg mb-2 sm:mb-4 line-clamp-2 shrink-0">
-            Next: {next.exercise} ({next.type})
+            {t("playerNext")}: {next.exercise} ({next.type === "work" ? t("playerWork") : t("playerRest")})
           </p>
         )}
 
@@ -236,14 +243,14 @@ function WorkoutPlayer({
             onClick={() => setIsPlaying((p) => !p)}
             className="px-5 py-3 sm:px-8 sm:py-4 rounded-xl sm:rounded-2xl bg-white text-surface-900 font-display font-bold text-base sm:text-lg shadow-lg touch-manipulation active:scale-95"
           >
-            {isPlaying ? "Pause" : "Play"}
+            {isPlaying ? t("playerPause") : t("playerPlay")}
           </button>
           <button
             type="button"
             onClick={handleSkip}
             className="px-5 py-3 sm:px-8 sm:py-4 rounded-xl sm:rounded-2xl bg-white/20 hover:bg-white/30 text-white font-display font-bold text-base sm:text-lg touch-manipulation active:scale-95"
           >
-            Skip
+            {t("playerSkip")}
           </button>
         </div>
       </div>
@@ -263,16 +270,16 @@ function WorkoutPlayer({
 }
 
 const PRIMARY_FOCUS_OPTIONS = [
-  { id: "soccer", label: "Soccer Conditioning", emoji: "⚽" },
-  { id: "tennis", label: "Tennis Agility", emoji: "🎾" },
-  { id: "physique", label: "General Physique / Hypertrophy", emoji: "💪" },
-  { id: "other", label: "Other (describe below)", emoji: "✏️" },
+  { id: "soccer", labelKey: "focusSoccer" as const, emoji: "⚽" },
+  { id: "tennis", labelKey: "focusTennis" as const, emoji: "🎾" },
+  { id: "physique", labelKey: "focusPhysique" as const, emoji: "💪" },
+  { id: "other", labelKey: "focusOther" as const, emoji: "✏️" },
 ] as const;
 
 const EQUIPMENT_OPTIONS = [
-  { id: "bodyweight", label: "Bodyweight Only" },
-  { id: "dumbbells", label: "Dumbbells / Bands" },
-  { id: "full-gym", label: "Full Gym" },
+  { id: "bodyweight", labelKey: "equipmentBodyweight" as const },
+  { id: "dumbbells", labelKey: "equipmentDumbbells" as const },
+  { id: "full-gym", labelKey: "equipmentFullGym" as const },
 ] as const;
 
 interface WorkoutExercise {
@@ -361,10 +368,14 @@ function WorkoutDisplay({
   workout,
   targetMinutes,
   onGenerateAnother,
+  t,
+  lang,
 }: {
   workout: Workout;
   targetMinutes?: number;
   onGenerateAnother: () => void;
+  t: (key: import("@/lib/translations").TranslationKey, params?: Record<string, string | number>) => string;
+  lang: "en" | "zh";
 }) {
   const [showPlayer, setShowPlayer] = useState(false);
   const [warmupChecked, setWarmupChecked] = useState<Set<number>>(new Set());
@@ -403,7 +414,7 @@ function WorkoutDisplay({
       <div className="bg-surface-50 dark:bg-surface-800/40 rounded-2xl border border-surface-200/80 dark:border-surface-700/80 overflow-hidden">
         <div className="px-4 pt-4 pb-2">
           <h3 className="font-display font-semibold text-surface-900 dark:text-white flex items-center gap-2">
-            <span className="text-lg">🔥</span> Warmup
+            <span className="text-lg">🔥</span> {t("warmup")}
           </h3>
         </div>
         <div className="divide-y divide-surface-200/80 dark:divide-surface-700/80 px-4 pb-2">
@@ -422,7 +433,7 @@ function WorkoutDisplay({
       {/* Main Workout Cards */}
       <div>
         <h3 className="font-display font-semibold text-surface-900 dark:text-white mb-3 px-1 flex items-center gap-2">
-          <span className="text-lg">💪</span> Main Workout
+          <span className="text-lg">💪</span> {t("mainWorkout")}
         </h3>
         <div className="space-y-4">
           {workout.main_workout.map((ex, i) => (
@@ -469,8 +480,8 @@ function WorkoutDisplay({
                       rel="noopener noreferrer"
                       onClick={(e) => e.stopPropagation()}
                       className="flex-shrink-0 p-1 rounded-lg text-primary-500 hover:bg-primary-100 dark:hover:bg-primary-900/30 touch-manipulation"
-                      title="Look up how to do this exercise"
-                      aria-label={`How to do ${ex.exercise}`}
+                      title={t("howToExercise")}
+                      aria-label={`${t("howToExercise")} ${ex.exercise}`}
                     >
                       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -479,16 +490,16 @@ function WorkoutDisplay({
                   </div>
                   <div className="flex flex-wrap gap-2 mt-2">
                     <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 font-bold text-sm">
-                      {ex.sets} sets
+                      {ex.sets} {t("sets")}
                     </span>
                     {ex.reps?.trim() && (
                       <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-slate-300 dark:bg-slate-600 text-slate-900 dark:text-white font-bold text-sm">
-                        {ex.reps.trim()} reps
+                        {ex.reps.trim()} {t("reps")}
                       </span>
                     )}
                     {ex.rest_time && (
                       <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200 font-bold text-sm">
-                        Rest: {ex.rest_time}
+                        {t("rest")}: {ex.rest_time}
                       </span>
                     )}
                   </div>
@@ -508,7 +519,7 @@ function WorkoutDisplay({
       <div className="bg-surface-50 dark:bg-surface-800/40 rounded-2xl border border-surface-200/80 dark:border-surface-700/80 overflow-hidden">
         <div className="px-4 pt-4 pb-2">
           <h3 className="font-display font-semibold text-surface-900 dark:text-white flex items-center gap-2">
-            <span className="text-lg">🧘</span> Cooldown
+            <span className="text-lg">🧘</span> {t("cooldown")}
           </h3>
         </div>
         <div className="divide-y divide-surface-200/80 dark:divide-surface-700/80 px-4 pb-2">
@@ -526,14 +537,14 @@ function WorkoutDisplay({
 
       {targetMinutes && (
         <p className="text-sm text-surface-500 dark:text-surface-400 text-center">
-          Estimated duration: ~
+          {t("estimatedDuration")}: ~
           {Math.round(
             buildIntervals(workout.main_workout, targetMinutes).reduce(
               (s, i) => s + i.durationSeconds,
               0
             ) / 60
           )}{" "}
-          min (matched to your {targetMinutes} min target)
+          {t("min")} ({t("matchedToTarget", { min: String(targetMinutes) })})
         </p>
       )}
       <button
@@ -541,7 +552,7 @@ function WorkoutDisplay({
         onClick={() => setShowPlayer(true)}
         className="w-full py-4 px-6 rounded-xl bg-primary-500 hover:bg-primary-600 text-white font-display font-bold text-lg shadow-lg shadow-primary-500/30 active:scale-[0.99] touch-manipulation"
       >
-        Start Workout
+        {t("startWorkout")}
       </button>
 
       <button
@@ -549,7 +560,7 @@ function WorkoutDisplay({
         onClick={onGenerateAnother}
         className="w-full py-3 px-6 rounded-xl border-2 border-primary-500 text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 active:scale-[0.99] font-display font-semibold transition-all touch-manipulation"
       >
-        Generate Another Workout
+        {t("generateAnother")}
       </button>
 
       {showPlayer && (
@@ -557,6 +568,8 @@ function WorkoutDisplay({
           mainWorkout={workout.main_workout}
           targetMinutes={targetMinutes}
           onClose={() => setShowPlayer(false)}
+          t={t}
+          lang={lang}
         />
       )}
     </div>
@@ -584,6 +597,7 @@ function SkeletonLoader() {
 }
 
 export default function Home() {
+  const { lang, setLang, t } = useLanguage();
   const [primaryFocus, setPrimaryFocus] = useState<string>("soccer");
   const [customFocusText, setCustomFocusText] = useState("");
   const [equipment, setEquipment] = useState<string>("bodyweight");
@@ -593,12 +607,15 @@ export default function Home() {
   const [generatedTime, setGeneratedTime] = useState<number>(45);
   const [error, setError] = useState<string | null>(null);
 
-  const getFocusLabel = (id: string) =>
-    id === "other"
-      ? (customFocusText.trim() || "General fitness")
-      : PRIMARY_FOCUS_OPTIONS.find((o) => o.id === id)?.label ?? id;
-  const getEquipmentLabel = (id: string) =>
-    EQUIPMENT_OPTIONS.find((o) => o.id === id)?.label ?? id;
+  const getFocusLabel = (id: string) => {
+    if (id === "other") return customFocusText.trim() || t("generalFitness");
+    const opt = PRIMARY_FOCUS_OPTIONS.find((o) => o.id === id);
+    return opt ? t(opt.labelKey) : id;
+  };
+  const getEquipmentLabel = (id: string) => {
+    const opt = EQUIPMENT_OPTIONS.find((o) => o.id === id);
+    return opt ? t(opt.labelKey) : id;
+  };
 
   const handleGenerate = async () => {
     setIsGenerating(true);
@@ -613,19 +630,20 @@ export default function Home() {
           focus: getFocusLabel(primaryFocus),
           equipment: getEquipmentLabel(equipment),
           time: timeAvailable,
+          language: lang,
         }),
       });
 
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.error ?? "Failed to generate workout");
+        throw new Error(data.error ?? t("errorFailed"));
       }
 
       setWorkout(data);
       setGeneratedTime(timeAvailable);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      setError(err instanceof Error ? err.message : t("errorGeneric"));
     } finally {
       setIsGenerating(false);
     }
@@ -651,12 +669,28 @@ export default function Home() {
 
       <div className="w-full max-w-xl">
         {/* Header */}
-        <header className="text-center mb-12">
+        <header className="text-center mb-12 relative">
+          <div className="absolute top-0 right-0 flex gap-1">
+            <button
+              type="button"
+              onClick={() => setLang("en")}
+              className={`px-2 py-1 rounded text-sm font-medium touch-manipulation ${lang === "en" ? "bg-primary-500 text-white" : "bg-surface-200 dark:bg-surface-700 text-surface-600 dark:text-surface-400"}`}
+            >
+              EN
+            </button>
+            <button
+              type="button"
+              onClick={() => setLang("zh")}
+              className={`px-2 py-1 rounded text-sm font-medium touch-manipulation ${lang === "zh" ? "bg-primary-500 text-white" : "bg-surface-200 dark:bg-surface-700 text-surface-600 dark:text-surface-400"}`}
+            >
+              中文
+            </button>
+          </div>
           <h1 className="font-display font-bold text-4xl md:text-5xl text-surface-900 dark:text-white mb-2 tracking-tight">
-            Workout Generator
+            {t("appTitle")}
           </h1>
           <p className="text-surface-800/80 dark:text-surface-200/80 text-lg">
-            Personalized routines for your goals and schedule
+            {t("appTagline")}
           </p>
         </header>
 
@@ -668,7 +702,7 @@ export default function Home() {
                 <div className="flex items-center gap-3 text-primary-600 dark:text-primary-400">
                   <Spinner />
                   <span className="font-display font-semibold">
-                    Building your workout...
+                    {t("buildingWorkout")}
                   </span>
                 </div>
                 <SkeletonLoader />
@@ -679,6 +713,8 @@ export default function Home() {
               workout={workout}
               targetMinutes={generatedTime}
               onGenerateAnother={handleGenerateAnother}
+              t={t}
+              lang={lang}
             />
           ) : (
             <form onSubmit={(e) => e.preventDefault()} className="space-y-8">
@@ -690,7 +726,7 @@ export default function Home() {
               {/* Primary Focus */}
               <div>
                 <label className="block font-display font-semibold text-surface-900 dark:text-white mb-3">
-                  Primary Focus
+                  {t("primaryFocus")}
                 </label>
                 <div className="grid gap-3">
                   {PRIMARY_FOCUS_OPTIONS.map((option) => (
@@ -721,7 +757,7 @@ export default function Home() {
                             : "text-surface-700 dark:text-surface-300"
                         }
                       >
-                        {option.label}
+                        {t(option.labelKey)}
                       </span>
                     </label>
                   ))}
@@ -731,7 +767,7 @@ export default function Home() {
                     type="text"
                     value={customFocusText}
                     onChange={(e) => setCustomFocusText(e.target.value)}
-                    placeholder="e.g. Basketball conditioning, Marathon prep, Upper body strength"
+                    placeholder={t("focusOtherPlaceholder")}
                     className="mt-3 w-full px-4 py-3 rounded-xl border-2 border-surface-200 dark:border-surface-800 bg-surface-50 dark:bg-surface-800/50 text-surface-900 dark:text-white placeholder:text-surface-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                   />
                 )}
@@ -743,7 +779,7 @@ export default function Home() {
                   htmlFor="equipment"
                   className="block font-display font-semibold text-surface-900 dark:text-white mb-3"
                 >
-                  Equipment Available
+                  {t("equipment")}
                 </label>
                 <select
                   id="equipment"
@@ -753,7 +789,7 @@ export default function Home() {
                 >
                   {EQUIPMENT_OPTIONS.map((option) => (
                     <option key={option.id} value={option.id}>
-                      {option.label}
+                      {t(option.labelKey)}
                     </option>
                   ))}
                 </select>
@@ -763,10 +799,10 @@ export default function Home() {
               <div>
                 <div className="flex justify-between items-baseline mb-3">
                   <label className="font-display font-semibold text-surface-900 dark:text-white">
-                    Time Available
+                    {t("timeAvailable")}
                   </label>
                   <span className="text-primary-600 dark:text-primary-400 font-bold text-lg">
-                    {timeAvailable} min
+                    {timeAvailable} {t("min")}
                   </span>
                 </div>
                 <input
@@ -779,8 +815,8 @@ export default function Home() {
                   className="w-full h-2"
                 />
                 <div className="flex justify-between text-sm text-surface-500 dark:text-surface-400 mt-1">
-                  <span>15 min</span>
-                  <span>120 min</span>
+                  <span>15 {t("min")}</span>
+                  <span>120 {t("min")}</span>
                 </div>
               </div>
 
@@ -790,7 +826,7 @@ export default function Home() {
                 onClick={handleGenerate}
                 className="w-full py-4 px-6 rounded-xl bg-primary-500 hover:bg-primary-600 active:bg-primary-700 text-white font-display font-bold text-lg shadow-lg shadow-primary-500/30 hover:shadow-primary-500/40 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
               >
-                Generate My Workout
+                {t("generateButton")}
               </button>
             </form>
           )}
@@ -798,7 +834,7 @@ export default function Home() {
 
         {/* Footer hint */}
         <p className="text-center text-sm text-surface-500 dark:text-surface-400 mt-6">
-          Your workout will be tailored to your selected preferences
+          {t("footerTailored")}
         </p>
       </div>
     </main>

@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 
-const SYSTEM_PROMPT = `You are an elite strength and conditioning coach. The user will provide their sport/goal, available equipment, and time limit. Generate a highly effective, sport-specific workout. You MUST return ONLY a raw JSON object with this exact structure: {"title": "string", "warmup": ["string", "string"], "main_workout": [{"exercise": "string", "sets": number, "reps": "string", "rest_time": "string", "focus_note": "string"}], "cooldown": ["string"]}.`;
+const SYSTEM_PROMPT = `You are an elite strength and conditioning coach. The user will provide their sport/goal, available equipment, time limit, and language. Generate a highly effective, sport-specific workout. You MUST return ONLY a raw JSON object with this exact structure: {"title": "string", "warmup": ["string", "string"], "main_workout": [{"exercise": "string", "sets": number, "reps": "string", "rest_time": "string", "focus_note": "string"}], "cooldown": ["string"]}. Write ALL text (title, warmup items, exercise names, focus_note, cooldown) in the requested language. For rest_time use that language too (e.g. "30 seconds" or "30秒", "1 minute" or "1分鐘").`;
 
 export interface GenerateWorkoutRequest {
   focus: string;
   equipment: string;
   time: number;
+  language?: "en" | "zh";
 }
 
 export interface WorkoutExercise {
@@ -34,7 +35,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body: GenerateWorkoutRequest = await request.json();
-    const { focus, equipment, time } = body;
+    const { focus, equipment, time, language = "en" } = body;
 
     if (!focus || !equipment || time == null) {
       return NextResponse.json(
@@ -43,7 +44,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const userMessage = `Sport/Goal: ${focus}\nAvailable Equipment: ${equipment}\nTime Limit: ${time} minutes`;
+    const userMessage = `Sport/Goal: ${focus}\nAvailable Equipment: ${equipment}\nTime Limit: ${time} minutes\nLanguage: Respond in ${language === "zh" ? "Traditional Chinese (繁體中文)" : "English"}.`;
 
     const openai = new OpenAI({
       apiKey: process.env.OPENAI_API_KEY,
