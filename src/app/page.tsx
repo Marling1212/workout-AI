@@ -269,6 +269,13 @@ function WorkoutPlayer({
   );
 }
 
+const PRIMARY_FOCUS_OPTIONS = [
+  { id: "fatLoss", labelKey: "focusFatLoss" as const, emoji: "🔥" },
+  { id: "muscle", labelKey: "focusMuscle" as const, emoji: "💪" },
+  { id: "cardio", labelKey: "focusCardio" as const, emoji: "❤️" },
+  { id: "other", labelKey: "focusOther" as const, emoji: "✏️" },
+] as const;
+
 const EQUIPMENT_OPTIONS = [
   { id: "bodyweight", labelKey: "equipmentBodyweight" as const },
   { id: "dumbbells", labelKey: "equipmentDumbbells" as const },
@@ -591,6 +598,8 @@ function SkeletonLoader() {
 
 export default function Home() {
   const { lang, setLang, t } = useLanguage();
+  const [primaryFocus, setPrimaryFocus] = useState<string>("");
+  const [customFocusText, setCustomFocusText] = useState("");
   const [goalDescription, setGoalDescription] = useState("");
   const [equipment, setEquipment] = useState<string>("bodyweight");
   const [timeAvailable, setTimeAvailable] = useState(45);
@@ -599,9 +608,23 @@ export default function Home() {
   const [generatedTime, setGeneratedTime] = useState<number>(45);
   const [error, setError] = useState<string | null>(null);
 
+  const getFocusLabel = (id: string) => {
+    if (id === "other") return customFocusText.trim();
+    const opt = PRIMARY_FOCUS_OPTIONS.find((o) => o.id === id);
+    return opt ? t(opt.labelKey) : "";
+  };
   const getEquipmentLabel = (id: string) => {
     const opt = EQUIPMENT_OPTIONS.find((o) => o.id === id);
     return opt ? t(opt.labelKey) : id;
+  };
+
+  const buildFocusForApi = () => {
+    const preset = primaryFocus ? getFocusLabel(primaryFocus) : "";
+    const desc = goalDescription.trim();
+    if (preset && desc) return `${preset}. User also says: ${desc}`;
+    if (preset) return preset;
+    if (desc) return desc;
+    return t("generalFitness");
   };
 
   const handleGenerate = async () => {
@@ -614,7 +637,7 @@ export default function Home() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          focus: goalDescription.trim() || t("generalFitness"),
+          focus: buildFocusForApi(),
           equipment: getEquipmentLabel(equipment),
           time: timeAvailable,
           language: lang,
@@ -710,6 +733,49 @@ export default function Home() {
                   {error}
                 </div>
               )}
+              {/* Quick pick (optional) */}
+              <div>
+                <label className="block font-display font-semibold text-surface-900 dark:text-white mb-3">
+                  {t("primaryFocusLabel")}
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {PRIMARY_FOCUS_OPTIONS.map((option) => (
+                    <label
+                      key={option.id}
+                      className={`
+                        flex items-center gap-2 p-3 rounded-xl border-2 cursor-pointer transition-all duration-200
+                        ${primaryFocus === option.id
+                          ? "border-primary-500 bg-primary-50 dark:bg-primary-900/20"
+                          : "border-surface-200 dark:border-surface-800 hover:border-primary-300 dark:hover:border-primary-700 bg-surface-50 dark:bg-surface-800/50"
+                        }
+                      `}
+                    >
+                      <input
+                        type="radio"
+                        name="primaryFocus"
+                        value={option.id}
+                        checked={primaryFocus === option.id}
+                        onChange={(e) => setPrimaryFocus(e.target.value)}
+                        className="sr-only pointer-events-none"
+                      />
+                      <span className="text-xl">{option.emoji}</span>
+                      <span className={`text-sm font-medium truncate ${primaryFocus === option.id ? "text-primary-700 dark:text-primary-300" : "text-surface-700 dark:text-surface-300"}`}>
+                        {t(option.labelKey)}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+                {primaryFocus === "other" && (
+                  <input
+                    type="text"
+                    value={customFocusText}
+                    onChange={(e) => setCustomFocusText(e.target.value)}
+                    placeholder={t("focusOtherPlaceholder")}
+                    className="mt-2 w-full px-4 py-2.5 rounded-xl border-2 border-surface-200 dark:border-surface-800 bg-surface-50 dark:bg-surface-800/50 text-surface-900 dark:text-white placeholder:text-surface-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
+                  />
+                )}
+              </div>
+
               {/* Goal / Problem description */}
               <div>
                 <label htmlFor="goalDescription" className="block font-display font-semibold text-surface-900 dark:text-white mb-3">
