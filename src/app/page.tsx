@@ -270,9 +270,9 @@ function WorkoutPlayer({
 }
 
 const PRIMARY_FOCUS_OPTIONS = [
-  { id: "soccer", labelKey: "focusSoccer" as const, emoji: "⚽" },
-  { id: "tennis", labelKey: "focusTennis" as const, emoji: "🎾" },
-  { id: "physique", labelKey: "focusPhysique" as const, emoji: "💪" },
+  { id: "fatLoss", labelKey: "focusFatLoss" as const, emoji: "🔥" },
+  { id: "muscle", labelKey: "focusMuscle" as const, emoji: "💪" },
+  { id: "cardio", labelKey: "focusCardio" as const, emoji: "❤️" },
   { id: "other", labelKey: "focusOther" as const, emoji: "✏️" },
 ] as const;
 
@@ -598,7 +598,7 @@ function SkeletonLoader() {
 
 export default function Home() {
   const { lang, setLang, t } = useLanguage();
-  const [primaryFocus, setPrimaryFocus] = useState<string>("soccer");
+  const [primaryFocus, setPrimaryFocus] = useState<string>("fatLoss");
   const [customFocusText, setCustomFocusText] = useState("");
   const [equipment, setEquipment] = useState<string>("bodyweight");
   const [timeAvailable, setTimeAvailable] = useState(45);

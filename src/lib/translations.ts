@@ -7,9 +7,9 @@ export const translations: Record<
     appTitle: string;
     appTagline: string;
     primaryFocus: string;
-    focusSoccer: string;
-    focusTennis: string;
-    focusPhysique: string;
+    focusFatLoss: string;
+    focusMuscle: string;
+    focusCardio: string;
     focusOther: string;
     focusOtherPlaceholder: string;
     equipment: string;
@@ -50,11 +50,11 @@ export const translations: Record<
     appTitle: "Workout Generator",
     appTagline: "Personalized routines for your goals and schedule",
     primaryFocus: "Primary Focus",
-    focusSoccer: "Soccer Conditioning",
-    focusTennis: "Tennis Agility",
-    focusPhysique: "General Physique / Hypertrophy",
+    focusFatLoss: "Fat Loss / Toning",
+    focusMuscle: "Build Muscle / Strength",
+    focusCardio: "Cardio & Endurance",
     focusOther: "Other (describe below)",
-    focusOtherPlaceholder: "e.g. Basketball conditioning, Marathon prep, Upper body strength",
+    focusOtherPlaceholder: "e.g. Sport-specific, rehab, flexibility",
     equipment: "Equipment Available",
     equipmentBodyweight: "Bodyweight Only",
     equipmentDumbbells: "Dumbbells / Bands",
@@ -92,11 +92,11 @@ export const translations: Record<
     appTitle: "我的健身 AI",
     appTagline: "依目標與時間為你規劃專屬課表",
     primaryFocus: "主要目標",
-    focusSoccer: "足球體能",
-    focusTennis: "網球敏捷",
-    focusPhysique: "肌肥大 / 體態",
+    focusFatLoss: "減脂 / 塑形",
+    focusMuscle: "增肌 / 肌力",
+    focusCardio: "心肺 / 耐力",
     focusOther: "其他（請在下方說明）",
-    focusOtherPlaceholder: "例如：籃球體能、馬拉松備賽、上肢力量",
+    focusOtherPlaceholder: "例如：專項運動、復健、柔軟度",
     equipment: "可用器材",
     equipmentBodyweight: "徒手",
     equipmentDumbbells: "啞鈴 / 彈力帶",
