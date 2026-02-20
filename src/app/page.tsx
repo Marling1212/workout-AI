@@ -269,13 +269,6 @@ function WorkoutPlayer({
   );
 }
 
-const PRIMARY_FOCUS_OPTIONS = [
-  { id: "fatLoss", labelKey: "focusFatLoss" as const, emoji: "🔥" },
-  { id: "muscle", labelKey: "focusMuscle" as const, emoji: "💪" },
-  { id: "cardio", labelKey: "focusCardio" as const, emoji: "❤️" },
-  { id: "other", labelKey: "focusOther" as const, emoji: "✏️" },
-] as const;
-
 const EQUIPMENT_OPTIONS = [
   { id: "bodyweight", labelKey: "equipmentBodyweight" as const },
   { id: "dumbbells", labelKey: "equipmentDumbbells" as const },
@@ -598,8 +591,7 @@ function SkeletonLoader() {
 
 export default function Home() {
   const { lang, setLang, t } = useLanguage();
-  const [primaryFocus, setPrimaryFocus] = useState<string>("fatLoss");
-  const [customFocusText, setCustomFocusText] = useState("");
+  const [goalDescription, setGoalDescription] = useState("");
   const [equipment, setEquipment] = useState<string>("bodyweight");
   const [timeAvailable, setTimeAvailable] = useState(45);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -607,11 +599,6 @@ export default function Home() {
   const [generatedTime, setGeneratedTime] = useState<number>(45);
   const [error, setError] = useState<string | null>(null);
 
-  const getFocusLabel = (id: string) => {
-    if (id === "other") return customFocusText.trim() || t("generalFitness");
-    const opt = PRIMARY_FOCUS_OPTIONS.find((o) => o.id === id);
-    return opt ? t(opt.labelKey) : id;
-  };
   const getEquipmentLabel = (id: string) => {
     const opt = EQUIPMENT_OPTIONS.find((o) => o.id === id);
     return opt ? t(opt.labelKey) : id;
@@ -627,7 +614,7 @@ export default function Home() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          focus: getFocusLabel(primaryFocus),
+          focus: goalDescription.trim() || t("generalFitness"),
           equipment: getEquipmentLabel(equipment),
           time: timeAvailable,
           language: lang,
@@ -723,54 +710,22 @@ export default function Home() {
                   {error}
                 </div>
               )}
-              {/* Primary Focus */}
+              {/* Goal / Problem description */}
               <div>
-                <label className="block font-display font-semibold text-surface-900 dark:text-white mb-3">
-                  {t("primaryFocus")}
+                <label htmlFor="goalDescription" className="block font-display font-semibold text-surface-900 dark:text-white mb-3">
+                  {t("goalDescriptionLabel")}
                 </label>
-                <div className="grid gap-3">
-                  {PRIMARY_FOCUS_OPTIONS.map((option) => (
-                    <label
-                      key={option.id}
-                      className={`
-                        flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all duration-200
-                        ${
-                          primaryFocus === option.id
-                            ? "border-primary-500 bg-primary-50 dark:bg-primary-900/20"
-                            : "border-surface-200 dark:border-surface-800 hover:border-primary-300 dark:hover:border-primary-700 bg-surface-50 dark:bg-surface-800/50"
-                        }
-                      `}
-                    >
-                      <input
-                        type="radio"
-                        name="primaryFocus"
-                        value={option.id}
-                        checked={primaryFocus === option.id}
-                        onChange={(e) => setPrimaryFocus(e.target.value)}
-                        className="sr-only pointer-events-none"
-                      />
-                      <span className="text-2xl">{option.emoji}</span>
-                      <span
-                        className={
-                          primaryFocus === option.id
-                            ? "font-medium text-primary-700 dark:text-primary-300"
-                            : "text-surface-700 dark:text-surface-300"
-                        }
-                      >
-                        {t(option.labelKey)}
-                      </span>
-                    </label>
-                  ))}
-                </div>
-                {primaryFocus === "other" && (
-                  <input
-                    type="text"
-                    value={customFocusText}
-                    onChange={(e) => setCustomFocusText(e.target.value)}
-                    placeholder={t("focusOtherPlaceholder")}
-                    className="mt-3 w-full px-4 py-3 rounded-xl border-2 border-surface-200 dark:border-surface-800 bg-surface-50 dark:bg-surface-800/50 text-surface-900 dark:text-white placeholder:text-surface-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                  />
-                )}
+                <textarea
+                  id="goalDescription"
+                  value={goalDescription}
+                  onChange={(e) => setGoalDescription(e.target.value)}
+                  placeholder={t("goalDescriptionPlaceholder")}
+                  rows={4}
+                  className="w-full px-4 py-3 rounded-xl border-2 border-surface-200 dark:border-surface-800 bg-surface-50 dark:bg-surface-800/50 text-surface-900 dark:text-white placeholder:text-surface-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-y min-h-[100px]"
+                />
+                <p className="mt-1.5 text-sm text-surface-500 dark:text-surface-400">
+                  {t("goalDescriptionHint")}
+                </p>
               </div>
 
               {/* Equipment */}

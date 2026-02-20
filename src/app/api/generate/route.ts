@@ -1,12 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 
-const SYSTEM_PROMPT = `You are an elite strength and conditioning coach. The user will provide their sport/goal, available equipment, time limit, and language. Generate a highly effective, sport-specific workout. You MUST return ONLY a raw JSON object with this exact structure: {"title": "string", "warmup": ["string", "string"], "main_workout": [{"exercise": "string", "sets": number, "reps": "string", "rest_time": "string", "focus_note": "string"}], "cooldown": ["string"]}.
+const SYSTEM_PROMPT = `You are an elite strength and conditioning coach. The user will provide a FREE-FORM description of their goal, problem, or situation (e.g. "I have lower back pain", "I want to run 5K", "I don't know what to train"). You must INTERPRET this and decide:
+- What type of training they need (strength, mobility, cardio, rehab, etc.)
+- Which body parts or qualities to focus on
+- Any precautions (e.g. avoid impact if knees are weak)
+Then generate a highly effective workout that fits their description. You MUST return ONLY a raw JSON object with this exact structure: {"title": "string", "warmup": ["string", "string"], "main_workout": [{"exercise": "string", "sets": number, "reps": "string", "rest_time": "string", "focus_note": "string"}], "cooldown": ["string"]}.
 
 IMPORTANT RULES:
-1. Exercise names (main_workout[].exercise): ALWAYS show BOTH languages. Format: "Chinese name (English name)" when user language is Chinese, e.g. "波比跳 (Burpees)". When user language is English use "English name (Chinese name)", e.g. "Burpees (波比跳)". This helps users recognize terms in both languages.
-2. focus_note: Write a clear, short instruction so the user knows HOW to do the exercise. Include 1-2 key form cues or steps (e.g. "蹲下雙手撐地，雙腳後跳成平板，做伏地挺身後收腳起跳" or "Squat, hands on floor, jump feet back to plank, push-up, jump feet in and stand"). Be specific and actionable.
-3. Write title, warmup, cooldown in the requested language. For rest_time use that language (e.g. "30 seconds" or "30秒", "1 minute" or "1分鐘").`;
+1. Use the user's description to choose exercises and structure. If they mention a problem (pain, weakness), include relevant prep and avoid harmful movements. If they are unsure, design a balanced full-body or general fitness routine.
+2. Exercise names (main_workout[].exercise): ALWAYS show BOTH languages. Format: "Chinese name (English name)" when user language is Chinese, e.g. "波比跳 (Burpees)". When user language is English use "English name (Chinese name)", e.g. "Burpees (波比跳)".
+3. focus_note: Write a clear, short instruction so the user knows HOW to do the exercise. Include 1-2 key form cues or steps. Be specific and actionable.
+4. Write title, warmup, cooldown in the requested language. For rest_time use that language (e.g. "30 seconds" or "30秒", "1 minute" or "1分鐘").`;
 
 export interface GenerateWorkoutRequest {
   focus: string;
@@ -49,7 +54,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const userMessage = `Sport/Goal: ${focus}\nAvailable Equipment: ${equipment}\nTime Limit: ${time} minutes\nLanguage: ${language === "zh" ? "Traditional Chinese (繁體中文). For each exercise name use format: 中文名 (English name). Make focus_note a clear step-by-step or key-point instruction in Chinese." : "English. For each exercise name use format: English name (中文名). Make focus_note a clear step-by-step or key-point instruction in English."}`;
+    const userMessage = `User's description (goal/problem/situation): ${focus}\nAvailable Equipment: ${equipment}\nTime Limit: ${time} minutes\nLanguage: ${language === "zh" ? "Traditional Chinese (繁體中文). For each exercise name use format: 中文名 (English name). Make focus_note a clear step-by-step or key-point instruction in Chinese." : "English. For each exercise name use format: English name (中文名). Make focus_note a clear step-by-step or key-point instruction in English."}\n\nDesign the workout based on what the user described. Decide what they need to train and any precautions.`;
 
     const openai = new OpenAI({
       apiKey: process.env.OPENAI_API_KEY,

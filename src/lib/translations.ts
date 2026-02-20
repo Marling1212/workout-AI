@@ -6,12 +6,9 @@ export const translations: Record<
   {
     appTitle: string;
     appTagline: string;
-    primaryFocus: string;
-    focusFatLoss: string;
-    focusMuscle: string;
-    focusCardio: string;
-    focusOther: string;
-    focusOtherPlaceholder: string;
+    goalDescriptionLabel: string;
+    goalDescriptionPlaceholder: string;
+    goalDescriptionHint: string;
     equipment: string;
     equipmentBodyweight: string;
     equipmentDumbbells: string;
@@ -49,12 +46,9 @@ export const translations: Record<
   en: {
     appTitle: "Workout Generator",
     appTagline: "Personalized routines for your goals and schedule",
-    primaryFocus: "Primary Focus",
-    focusFatLoss: "Fat Loss / Toning",
-    focusMuscle: "Build Muscle / Strength",
-    focusCardio: "Cardio & Endurance",
-    focusOther: "Other (describe below)",
-    focusOtherPlaceholder: "e.g. Sport-specific, rehab, flexibility",
+    goalDescriptionLabel: "Describe your goal or problem",
+    goalDescriptionPlaceholder: "e.g. I have lower back pain from sitting all day, I want to run my first 5K, I don't know what to train—just want to feel stronger, weak knees need to be careful",
+    goalDescriptionHint: "The AI will figure out what to train based on your description.",
     equipment: "Equipment Available",
     equipmentBodyweight: "Bodyweight Only",
     equipmentDumbbells: "Dumbbells / Bands",
@@ -91,12 +85,9 @@ export const translations: Record<
   zh: {
     appTitle: "我的健身 AI",
     appTagline: "依目標與時間為你規劃專屬課表",
-    primaryFocus: "主要目標",
-    focusFatLoss: "減脂 / 塑形",
-    focusMuscle: "增肌 / 肌力",
-    focusCardio: "心肺 / 耐力",
-    focusOther: "其他（請在下方說明）",
-    focusOtherPlaceholder: "例如：專項運動、復健、柔軟度",
+    goalDescriptionLabel: "描述你的目標或狀況",
+    goalDescriptionPlaceholder: "例如：久坐腰痠想改善、想跑第一次 5K、不確定要練什麼只想變健康、膝蓋不好要避開跳躍",
+    goalDescriptionHint: "AI 會依你的描述決定要練哪些部位與類型。",
     equipment: "可用器材",
     equipmentBodyweight: "徒手",
     equipmentDumbbells: "啞鈴 / 彈力帶",
