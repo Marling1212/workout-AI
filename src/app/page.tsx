@@ -93,16 +93,68 @@ function buildIntervals(
   return intervals;
 }
 
+const STREAK_STORAGE_KEY = "workout-ai-completed-dates";
+
+function getTodayDateString(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function getCompletedDates(): string[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(STREAK_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as unknown;
+    return Array.isArray(parsed) ? parsed.filter((d): d is string => typeof d === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
+function addCompletedDate(date: string): void {
+  const dates = getCompletedDates();
+  if (dates.includes(date)) return;
+  const next = [...dates, date].sort();
+  try {
+    localStorage.setItem(STREAK_STORAGE_KEY, JSON.stringify(next));
+  } catch {
+    // ignore
+  }
+}
+
+function computeStreak(dates: string[]): number {
+  if (dates.length === 0) return 0;
+  const today = getTodayDateString();
+  const uniq = Array.from(new Set(dates));
+  const mostRecent = uniq.sort().reverse()[0];
+  const mostRecentDate = new Date(mostRecent + "T12:00:00");
+  const todayDate = new Date(today + "T12:00:00");
+  const diffDays = Math.floor((todayDate.getTime() - mostRecentDate.getTime()) / (24 * 60 * 60 * 1000));
+  if (diffDays > 1) return 0; // missed a day
+  const dateSet = new Set(uniq);
+  let count = 1;
+  const d = new Date(mostRecent + "T12:00:00");
+  while (true) {
+    d.setDate(d.getDate() - 1);
+    const prevStr = d.toISOString().slice(0, 10);
+    if (dateSet.has(prevStr)) count++;
+    else break;
+  }
+  return count;
+}
+
 function WorkoutPlayer({
   mainWorkout,
   targetMinutes,
   onClose,
+  onWorkoutComplete,
   t,
   lang,
 }: {
   mainWorkout: WorkoutExercise[];
   targetMinutes?: number;
   onClose: () => void;
+  onWorkoutComplete?: () => void;
   t: (key: import("@/lib/translations").TranslationKey, params?: Record<string, string | number>) => string;
   lang: "en" | "zh";
 }) {
@@ -142,9 +194,10 @@ function WorkoutPlayer({
         announcedReadyRef.current = false;
       } else {
         setIsPlaying(false);
+        onWorkoutComplete?.();
       }
     }
-  }, [secondsLeft, current, index, intervals]);
+  }, [secondsLeft, current, index, intervals, onWorkoutComplete]);
 
   useEffect(() => {
     if (current?.type === "rest" && next?.type === "work" && secondsLeft === 5 && !muted && !announcedReadyRef.current) {
@@ -368,12 +421,14 @@ function WorkoutDisplay({
   workout,
   targetMinutes,
   onGenerateAnother,
+  onWorkoutComplete,
   t,
   lang,
 }: {
   workout: Workout;
   targetMinutes?: number;
   onGenerateAnother: () => void;
+  onWorkoutComplete?: () => void;
   t: (key: import("@/lib/translations").TranslationKey, params?: Record<string, string | number>) => string;
   lang: "en" | "zh";
 }) {
@@ -568,6 +623,7 @@ function WorkoutDisplay({
           mainWorkout={workout.main_workout}
           targetMinutes={targetMinutes}
           onClose={() => setShowPlayer(false)}
+          onWorkoutComplete={onWorkoutComplete}
           t={t}
           lang={lang}
         />
@@ -607,6 +663,17 @@ export default function Home() {
   const [workout, setWorkout] = useState<Workout | null>(null);
   const [generatedTime, setGeneratedTime] = useState<number>(45);
   const [error, setError] = useState<string | null>(null);
+  const [streak, setStreak] = useState(0);
+
+  useEffect(() => {
+    setStreak(computeStreak(getCompletedDates()));
+  }, []);
+
+  const recordWorkoutComplete = useCallback(() => {
+    const today = getTodayDateString();
+    addCompletedDate(today);
+    setStreak(computeStreak(getCompletedDates()));
+  }, []);
 
   const getFocusLabel = (id: string) => {
     if (id === "other") return customFocusText.trim();
@@ -723,11 +790,22 @@ export default function Home() {
               workout={workout}
               targetMinutes={generatedTime}
               onGenerateAnother={handleGenerateAnother}
+              onWorkoutComplete={recordWorkoutComplete}
               t={t}
               lang={lang}
             />
           ) : (
             <form onSubmit={(e) => e.preventDefault()} className="space-y-8">
+              {/* Streak */}
+              <div className="flex items-center justify-center gap-2 py-2 px-4 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200/80 dark:border-amber-800/50">
+                <span className="text-2xl" aria-hidden>🔥</span>
+                <span className="font-display font-semibold text-surface-800 dark:text-surface-200">
+                  {streak > 0
+                    ? t("streakDays", { count: streak })
+                    : t("streakStart")}
+                </span>
+              </div>
+
               {error && (
                 <div className="p-4 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 text-sm">
                   {error}

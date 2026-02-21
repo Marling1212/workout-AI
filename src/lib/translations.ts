@@ -47,6 +47,8 @@ export const translations: Record<
     footerTailored: string;
     howToExercise: string;
     generalFitness: string;
+    streakDays: string;
+    streakStart: string;
   }
 > = {
   en: {
@@ -93,6 +95,8 @@ export const translations: Record<
     footerTailored: "Your workout will be tailored to your selected preferences",
     howToExercise: "Look up how to do this exercise",
     generalFitness: "General fitness",
+    streakDays: "{count} day streak",
+    streakStart: "Start your streak! Finish a workout today.",
   },
   zh: {
     appTitle: "我的健身 AI",
@@ -138,5 +142,7 @@ export const translations: Record<
     footerTailored: "課表將依你的選擇客製化",
     howToExercise: "查詢此動作做法",
     generalFitness: "一般體能",
+    streakDays: "{count} 天連續",
+    streakStart: "今天完成一次訓練，開始你的連續紀錄！",
   },
 };
